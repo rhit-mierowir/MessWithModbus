@@ -9,4 +9,6 @@ Early on, I tried to understand how to use scapy:
 
 Then, I learned of pymodbus:
 - [Blog example of a simulated atteck](https://mustafaalshawwa.com/posts/modbustcp/)
-    - Primarily impacted in try_pymodbus/*
+    - Primarily impacted in try_pymodbus/* (run both in separate terminals)
+- [pymodbus On Github](https://github.com/pymodbus-dev/pymodbus/)
+- [pymodbus Documentation](https://pymodbus.readthedocs.io/en/latest/source/server.html)
