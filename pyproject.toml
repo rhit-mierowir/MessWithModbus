@@ -1,0 +1,21 @@
+[project]
+name = "messwithmodbus"
+version = "0.1.0"
+description = "Test Scripts for Messing With Modbus"
+authors = [
+    {name = "Your Name",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<4"
+dependencies = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "scapy (>=2.7.0,<3.0.0)",
+    "pymodbus (==3.5.4)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
