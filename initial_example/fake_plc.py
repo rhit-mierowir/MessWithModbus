@@ -56,11 +56,11 @@ async def run_client():
 
         # 4. Write Single Register (address 20, value 1234)
         log.info("Attempting to write single register...")
-        rq_reg = await client.write_register(address=20, value=1234)
+        rq_reg = await client.write_register(address=4, value=1234)
         if rq_reg.isError():
             log.error(f"Modbus Error writing register: {rq_reg}")
         else:
-            log.info(f"Wrote Holding Register 20: 1234")
+            log.info(f"Wrote Holding Register 4: 1234")
 
         await asyncio.sleep(1)
 
