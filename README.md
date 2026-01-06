@@ -15,6 +15,18 @@ To add dependancies to this project, write:
 poetry add <dependancy>
 ```
 
+## More Specifically
+
+``` bash
+poetry install
+
+#==========[ Terminal 1 ]=============#
+poetry run ./first_itteration/watersensor_server.py
+
+#==========[ Terminal 2 ]=============#
+poetry run ./first_itteration/fake_plc.py
+```
+
 # General Resources and explaination of the files:
 Early on, I tried to understand how to use scapy:
 - [Documentation Example Lab](https://www.scribd.com/document/419491885/craft-modbus?v=0.184)
@@ -27,6 +39,7 @@ Then, I learned of pymodbus:
 - [pymodbus Documentation](https://pymodbus.readthedocs.io/en/latest/source/server.html)
 
 Confident I understood pymodbus, I decided to try to have a second async service on the server (device) also be able to edit the registers in addition to the client. This was a bit unintuitive and required a lot of figuring out what was ment through undocumented code, but eventually I was successful.
+
     - Primarily impacted initial_example/*
         - initial_example/fake_plc.py (for future experimentation more specific applications, but initiall identical to try_pymodbus/modbus_client.py)
         - initial_example/watersensor_server_noupdating.py was my first attempt at this before encountering the example in the pymodbus documentation
