@@ -27,7 +27,7 @@ class mb_func_code(IntEnum):
 
 logging.basicConfig()
 log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 
 @dataclass(frozen=True)
 class SimulationParameters:
@@ -136,7 +136,7 @@ class Simulation:
             self._is_overflowing = True
 
 def log_sim_events(sim:Simulation):
-    log.debug(f"Simulated Tank Level = {sim.get_current_level()}")
+    log.info(f"Simulated Tank Level = {sim.get_current_level()}")
 
     if sim.is_empty():
         log.info("Simulated Tank Is Empty")
@@ -249,6 +249,15 @@ def setup_updating_server():
 
 
 async def prepare_simulation(context, timestep_length_sec:float=0.5):
+    
+    return 
+
+
+
+async def run_server(modbus_server, context):
+    """Start updating_task concurrently with the current task."""
+
+
     param = SimulationParameters(
         initial_level=0,
         min_level=0,
@@ -259,18 +268,11 @@ async def prepare_simulation(context, timestep_length_sec:float=0.5):
         pump_rate_per_sec=10
     )
     sim = Simulation(parameers=param,
-                     timestep_length_in_sec=timestep_length_sec,
+                     timestep_length_in_sec=0.5,
                      pump_active=False,
                      leak_active=True
                      )
-    return simulate(context,sim)
-
-
-
-async def run_server(modbus_server, context):
-    """Start updating_task concurrently with the current task."""
-
-    sim_task = asyncio.create_task(prepare_simulation(context,timestep_length_sec=0.5))
+    sim_task = asyncio.create_task(simulate(context,sim))
     sim_task.set_name("Task Simulating Real Environment")
 
     # task = asyncio.create_task(updating_task(context)) # Run the updating task
