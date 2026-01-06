@@ -21,7 +21,7 @@ Early on, I tried to understand how to use scapy:
     - Primarily impacted first_scapy_experiment.py
 
 Then, I learned of pymodbus:
-- [Blog example of a simulated atteck](https://mustafaalshawwa.com/posts/modbustcp/)
+- [Blog example of a simulated attack](https://mustafaalshawwa.com/posts/modbustcp/)
     - Primarily impacted in try_pymodbus/* (run both in separate terminals)
 - [pymodbus On Github](https://github.com/pymodbus-dev/pymodbus/)
 - [pymodbus Documentation](https://pymodbus.readthedocs.io/en/latest/source/server.html)

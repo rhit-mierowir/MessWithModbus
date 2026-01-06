@@ -3,6 +3,7 @@ import asyncio
 import logging
 import sys
 from enum import Enum,IntEnum
+from dataclasses import dataclass, field
 
 from pymodbus.datastore import (
     ModbusSequentialDataBlock,
@@ -26,7 +27,151 @@ class mb_func_code(IntEnum):
 
 logging.basicConfig()
 log = logging.getLogger()
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
+
+@dataclass(frozen=True)
+class SimulationParameters:
+    "The parameters required to run the simulation. Uses an abstract 'level' to represent the volume of the liquid (e.g. Liters, Gallons, etc)."
+
+    upper_sensor_activation_level: float
+    "Above this level, the upper_sensor is active (1)"
+    lower_sensor_activation_level: float
+    "Above this level, the lower_sensor is active (1)"
+    leak_rate_per_sec: float
+    "How much the level decreases per second by leaking from container. (should be positive)"
+    pump_rate_per_sec: float
+    "How much the level increases per second when the pump is active. (should be positive)"
+
+    initial_level: float = field(default=0)
+    "Quantity of Liquid in container initially"
+    min_level: float = field(default=0)
+    "Minimum level of liquid in container before it can leak no more water"
+    max_level: float = field(default=100)
+    "Maximum level of liquid in container before it overflows"
+
+class Simulation:
+    def __init__(self, parameers:SimulationParameters, timestep_length_in_sec:float, pump_active:bool=True, leak_active:bool=True):
+        self._parameters                = parameers
+        self._timestep_sec              = timestep_length_in_sec
+        self._pump_rate_per_step:float  = self._parameters.pump_rate_per_sec * self._timestep_sec
+        self._leak_rate_per_step:float  = self._parameters.leak_rate_per_sec * self._timestep_sec
+
+        self._current_level:float       = self._parameters.initial_level
+        self._pump_is_active:bool       = False
+        self._leak_is_active:bool       = True
+        
+        self._is_overflowing:bool       = self._parameters.initial_level >= self._parameters.max_level
+        self._is_empty:bool             = self._parameters.min_level >= self._parameters.initial_level
+        self._is_increasing:bool        = False
+        self._is_decreasing:bool        = False
+
+    def get_timestep_length_in_seconds(self)->float:
+        return self._timestep_sec
+    
+    def get_current_level(self)->float:
+        return self._current_level
+
+    def is_overflowing(self)->bool:
+        return self._is_overflowing
+    
+    def is_empty(self)->bool:
+        return self._is_empty
+    
+    def is_increasing(self)->bool:
+        return self._is_increasing
+    
+    def is_decreasing(self)->bool:
+        return self._is_decreasing
+    
+    def is_upper_sensor_active(self)->bool:
+        return self._current_level >= self._parameters.upper_sensor_activation_level
+    
+    def is_lower_sensor_active(self)->bool:
+        return self._current_level >= self._parameters.lower_sensor_activation_level
+    
+    def set_pump(self,activate:bool):
+        self._pump_is_active = activate
+    
+    def is_pump_active(self)->bool:
+        return self._pump_is_active
+    
+    def set_leak(self,activate:bool):
+        self._leak_is_active = activate
+    
+    def is_leak_active(self)->bool:
+        return self._leak_is_active
+    
+    def perform_timestep(self):
+
+        #Initialize Statistic Variables
+        self._is_decreasing = False
+        self._is_increasing = False
+        self._is_overflowing = False
+        self._is_empty = False
+
+        # Find Water Level change this timestep (assume on for entire timestep if on now, otherwise off)
+        level_change = 0
+
+        if self._leak_is_active:
+            level_change -= self._leak_rate_per_step
+
+        if self._pump_is_active:
+            level_change += self._pump_rate_per_step
+        
+        if level_change > 0:
+            self._is_increasing = True
+        elif level_change < 0:
+            self._is_decreasing = True
+
+        self._current_level += level_change
+
+        # Constrain level to container
+
+        if self._current_level <= self._parameters.min_level:
+            self._current_level = self._parameters.min_level
+            self._is_empty = True
+
+        if self._current_level >= self._parameters.max_level:
+            self._current_level = self._parameters.max_level
+            self._is_overflowing = True
+
+def log_sim_events(sim:Simulation):
+    log.debug(f"Simulated Tank Level = {sim.get_current_level()}")
+
+    if sim.is_empty():
+        log.info("Simulated Tank Is Empty")
+    if sim.is_overflowing():
+        log.info("Simulated Tank Is Overflowing")
+
+async def simulate(context, sim:Simulation):
+    """
+    Proforms the provided simulation asyncronously, 
+    and applies it to the current values in the modbus server. 
+    """
+    delay = sim.get_timestep_length_in_seconds()
+
+    func_code = mb_func_code.Read_D_Contacts
+    # device_id = 0x00
+
+
+    context.setValues(mb_func_code.Read_D_Coils, address=0, values=[sim.is_pump_active()])
+
+    while True:
+        upper_sensor_reading:bool = sim.is_upper_sensor_active()
+        context.setValues(mb_func_code.Read_D_Contacts, address=0, values=[upper_sensor_reading])
+
+        lower_sensor_reading:bool = sim.is_lower_sensor_active()
+        context.setValues(mb_func_code.Read_D_Contacts, address=1, values=[lower_sensor_reading])
+
+        await asyncio.sleep(delay)
+
+        sim.set_leak(True) # Always True For us
+        sim.set_pump(context.getValues(mb_func_code.Read_D_Coils, address=0, count=1)[0]) # Depends on current setting of pump
+        
+        sim.perform_timestep()
+
+        log_sim_events(sim)
+
 
 async def updating_task(context):
     """Update values in server.
@@ -103,13 +248,39 @@ def setup_updating_server():
     return server, device_context
 
 
+async def prepare_simulation(context, timestep_length_sec:float=0.5):
+    param = SimulationParameters(
+        initial_level=0,
+        min_level=0,
+        max_level=100,
+        upper_sensor_activation_level=75,
+        lower_sensor_activation_level=25,
+        leak_rate_per_sec=5,
+        pump_rate_per_sec=10
+    )
+    sim = Simulation(parameers=param,
+                     timestep_length_in_sec=timestep_length_sec,
+                     pump_active=False,
+                     leak_active=True
+                     )
+    return simulate(context,sim)
+
+
 
 async def run_server(modbus_server, context):
     """Start updating_task concurrently with the current task."""
-    task = asyncio.create_task(updating_task(context)) # Run the updating task
-    task.set_name("example updating task")
+
+    sim_task = asyncio.create_task(prepare_simulation(context,timestep_length_sec=0.5))
+    sim_task.set_name("Task Simulating Real Environment")
+
+    # task = asyncio.create_task(updating_task(context)) # Run the updating task
+    # task.set_name("example updating task")
+
     await modbus_server  # start the server, run until it fails
-    task.cancel() # Cancel the updating task
+
+    # task.cancel() # Cancel the updating task
+    sim_task.cancel()
+    
 
 
 async def main():
