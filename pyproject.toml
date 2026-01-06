@@ -1,9 +1,9 @@
 [project]
 name = "messwithmodbus"
-version = "0.1.0"
+version = "1.0.0"
 description = "Test Scripts for Messing With Modbus"
 authors = [
-    {name = "Your Name",email = "you@example.com"}
+    {name = "Mierowir",email = "mierowir@rose-hulman.edu"}
 ]
 readme = "README.md"
 requires-python = ">=3.11,<4"
