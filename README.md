@@ -40,9 +40,11 @@ Then, I learned of pymodbus:
 
 Confident I understood pymodbus, I decided to try to have a second async service on the server (device) also be able to edit the registers in addition to the client. This was a bit unintuitive and required a lot of figuring out what was ment through undocumented code, but eventually I was successful.
 
-    - Primarily impacted initial_example/*
-        - initial_example/fake_plc.py (for future experimentation more specific applications, but initiall identical to try_pymodbus/modbus_client.py)
-        - initial_example/watersensor_server_noupdating.py was my first attempt at this before encountering the example in the pymodbus documentation
-        - initial_example/watersensor_server.py used the code for the updating server but I edited it for my use-case after spending a lot of time figuring out what was happening and getting rid of the needless complexity across the many example files it referenced, building off the example code I used in try_pymodbus/*
-    - I found [this example of an updating server in the pymodbus documentation](https://github.com/pymodbus-dev/pymodbus/blob/dev/examples/server_updating.py#L40) which was hard to interpret, but eventually I figured it out and used it to create watersensor_server.py
-    - I validated that the server (initial_example/watersensor_server.py) ran properly and showed the contents of the registers being edited.
+- Primarily impacted initial_example/*
+    - initial_example/fake_plc.py (for future experimentation more specific applications, but initiall identical to try_pymodbus/modbus_client.py)
+    - initial_example/watersensor_server_noupdating.py was my first attempt at this before encountering the example in the pymodbus documentation
+    - initial_example/watersensor_server.py used the code for the updating server but I edited it for my use-case after spending a lot of time figuring out what was happening and getting rid of the needless complexity across the many example files it referenced, building off the example code I used in try_pymodbus/*
+- I found [this example of an updating server in the pymodbus documentation](https://github.com/pymodbus-dev/pymodbus/blob/dev/examples/server_updating.py#L40) which was hard to interpret, but eventually I figured it out and used it to create watersensor_server.py
+- I validated that the server (initial_example/watersensor_server.py) ran properly and showed the contents of the registers being edited.
+
+`first_itteration/*` is the version where both the client and server look like the final simulation we are making and runs properly.
