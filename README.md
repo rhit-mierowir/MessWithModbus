@@ -24,7 +24,9 @@ poetry install
 poetry run ./first_itteration/watersensor_server.py
 
 #==========[ Terminal 2 ]=============#
-poetry run ./first_itteration/fake_plc.py
+poetry run ./first_itteration/manual_plc.py
+# OR
+poetry run ./first_itteration/auto_plc.py
 ```
 
 # General Resources and explaination of the files:
@@ -48,3 +50,72 @@ Confident I understood pymodbus, I decided to try to have a second async service
 - I validated that the server (initial_example/watersensor_server.py) ran properly and showed the contents of the registers being edited.
 
 `first_itteration/*` is the version where both the client and server look like the final simulation we are making and runs properly.
+
+# How to Use First_Itteration Scripts
+
+## Watersensor_server.py 
+
+Run it as:
+``` bash
+poetry run ./first_itteration/watersensor_server.py
+```
+
+To change the parameters of the environment, change this code
+
+``` python
+261|    param = SimulationParameters(
+262|        initial_level=0,
+263|        min_level=0,
+264|        max_level=100,
+265|        upper_sensor_activation_level=75,
+266|        lower_sensor_activation_level=25,
+267|        leak_rate_per_sec=5,
+268|        pump_rate_per_sec=10
+269|    )
+```
+
+## manual_plc.py
+
+Run as:
+``` bash
+poetry run ./first_itteration/manual_plc.py
+```
+
+This allows you to manually control the client side code via user input via standard input using the keyboard.
+
+## auto_plc.py
+
+Run as:
+``` bash
+poetry run ./first_itteration/auto_plc.py
+```
+
+Standard outputs:
+```
+UPDATE: Updated sensor state cache.
+SUCCESS: Turned ON pump by LLS
+SUCCESS: Turned OFF pump by ULS
+SUCCESS: Turned ON pump by LLS
+UPDATE: Updated sensor state cache.
+SUCCESS: Turned OFF pump by ULS
+SUCCESS: Turned ON pump by LLS
+SUCCESS: Turned OFF pump by ULS
+UPDATE: Updated sensor state cache.
+SUCCESS: Turned ON pump by LLS
+SUCCESS: Turned OFF pump by ULS
+```
+
+`LLS` - Lower Level Sensor
+
+`ULS` - Upper Level Sensor
+
+To change the how frequently UPDATE is run, edit this code:
+
+```python
+155|    async def run_client():
+156|        DELAY_SEC = 30
+157|        DELAY_UNTIL_UPDATE = range(DELAY_SEC*167) #167 was a coefficient experimentally determined to correspont to ~1sec
+
+```
+
+UPDATE validates that the stored parameters are regularly checked to ensure that they adhere to their status on the main server. This is to reduce the quantity of traffic sent to just the upper and lower level sensor in most situations while avoiding system state to separate too much 
