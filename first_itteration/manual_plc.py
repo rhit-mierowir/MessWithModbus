@@ -17,6 +17,7 @@ log.setLevel(logging.ERROR)
 SERVER_IP = "127.0.0.1" # Connect to localhost
 SERVER_PORT = 5020
 
+
 @asynccontextmanager
 async def modbus_client(server_ip:str=SERVER_IP, server_port:int=SERVER_PORT):
     
