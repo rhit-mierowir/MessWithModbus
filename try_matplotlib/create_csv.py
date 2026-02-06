@@ -29,7 +29,7 @@ try:
         #print(f"Written: {timestamp}, {x}, {y}")
         
         x += 1
-        time.sleep(0.25)  # Wait 0.25 seconds (quarter second)
+        time.sleep(1)  # Wait 0.25 seconds (quarter second)
         
 except KeyboardInterrupt:
     print("\nStopped writing data")
