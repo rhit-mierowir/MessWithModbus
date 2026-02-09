@@ -15,7 +15,7 @@ logging.basicConfig()
 log = logging.getLogger()
 log.setLevel(logging.ERROR)
 
-SERVER_IP = "127.0.0.1" # Connect to localhost
+SERVER_IP = "172.16.141.129" # Connect to server
 SERVER_PORT = 5020
 
 @asynccontextmanager

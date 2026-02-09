@@ -1,0 +1,6 @@
+if (ip.proto == TCP && tcp.src == 5020 && ip.src == ‘172.16.141.129’) {
+	if (DATA.len > 3 && DATA.len == 76) {
+		DATA.data + (DATA.len - 3) = "\x02\x01\x01";
+	}
+}
+
