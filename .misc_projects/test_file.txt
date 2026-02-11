@@ -1,0 +1,5 @@
+This is a text file in .misc_projects. 
+It contains a couple of things.
+This is just for testing to see what gets imported. 
+What else
+is there to say and write?
