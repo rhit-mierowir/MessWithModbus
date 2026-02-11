@@ -29,7 +29,11 @@ class mb_func_code(IntEnum):
     WriteOne_A_HoldingReg   = 6
     WriteMany_A_HoldingReg  = 16
 
-logging.basicConfig()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
