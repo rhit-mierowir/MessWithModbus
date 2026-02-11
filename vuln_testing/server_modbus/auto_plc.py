@@ -11,12 +11,19 @@ from contextlib import asynccontextmanager
 from enum import Enum, auto
 from dataclasses import dataclass, field
 
-logging.basicConfig()
+from datetime import datetime
+
+logging.basicConfig(
+    level=logging.ERROR,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",  # optional custom time format
+)
 log = logging.getLogger()
 log.setLevel(logging.ERROR)
 
-SERVER_IP = "172.16.141.129" # Connect to server
+SERVER_IP = "172.16.141.136" # Connect to server
 SERVER_PORT = 5020
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 @asynccontextmanager
 async def modbus_client(server_ip:str=SERVER_IP, server_port:int=SERVER_PORT):
@@ -96,23 +103,23 @@ class environment_state():
 async def update_state(client:AsyncModbusTcpClient, state:environment_state) -> None:
     match await pump_is_active(client):
         case Maybe.empty:
-            print("UPDATE:FAILED: MODBUS Couldn't get pump status")
+            print(f"{now} UPDATE:FAILED: MODBUS Couldn't get pump status")
         case Some(reading):
             state.pump_is_active = reading
     
     match await upper_sensor_is_triggered(client):
         case Maybe.empty:
-            print("UPDATE:FAILED: MODBUS Couldn't get upper sensor status")
+            print(f"{now} UPDATE:FAILED: MODBUS Couldn't get upper sensor status")
         case Some(reading):
             state.upper_sensor_is_triggered = reading
     
     match await lower_sensor_is_triggered(client):
         case Maybe.empty:
-            print("UPDATE:FAILED: MODBUS Couldn't get lower sensor status")
+            print(f"{now} UPDATE:FAILED: MODBUS Couldn't get lower sensor status")
         case Some(reading):
             state.lower_sensor_is_triggered = reading
 
-    print("UPDATE: Updated sensor state cache.")
+    print(f"{now} UPDATE: Updated sensor state cache.")
 
 async def flip_pump_if_pass_trigger(client:AsyncModbusTcpClient, state:environment_state) -> None:
 
@@ -121,32 +128,32 @@ async def flip_pump_if_pass_trigger(client:AsyncModbusTcpClient, state:environme
         if (not lower_triggered) and (not state.pump_is_active):
             success = await set_pump(client, activate=True)
             if success:
-                print("SUCCESS: Turned ON pump by LLS")
+                print(f"{now} SUCCESS: Turned ON pump by LLS")
                 state.pump_is_active = True
             else:
-                print("FAILED: MODBUS couldn't turn on pump.")
+                print(f"{now} FAILED: MODBUS couldn't turn on pump.")
 
     async def flip_pump_if_upper(upper_triggered:bool):
         # Turn off pump if the upper sensor is triggered and the pump is on
         if upper_triggered and state.pump_is_active:
             success = await set_pump(client, activate=False)
             if success:
-                print("SUCCESS: Turned OFF pump by ULS")
+                print(f"{now} SUCCESS: Turned OFF pump by ULS")
                 state.pump_is_active = False
             else:
-                print("FAILED: MODBUS couldn't turn off pump.")
+                print(f"{now} FAILED: MODBUS couldn't turn off pump.")
         
 
     match await lower_sensor_is_triggered(client):
         case Maybe.empty:
-            print("FAILED: MODBUS couldn't read lower sensor.")
+            print(f"{now} FAILED: MODBUS couldn't read lower sensor.")
         case Some(reading):
             await flip_pump_if_lower(reading)
             state.lower_sensor_is_triggered = reading
 
     match await upper_sensor_is_triggered(client):
         case Maybe.empty:
-            print("FAILED: MODBUS couldn't read upper sensor.")
+            print(f"{now} FAILED: MODBUS couldn't read upper sensor.")
         case Some(reading):
             await flip_pump_if_upper(reading)
             state.upper_sensor_is_triggered = reading
