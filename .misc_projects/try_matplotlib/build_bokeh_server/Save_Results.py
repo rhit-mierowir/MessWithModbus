@@ -4,11 +4,14 @@ from dataclasses import dataclass, field, is_dataclass, asdict
 from pathlib import Path
 from datetime import datetime
 from contextlib import asynccontextmanager
+import pandas as pd
 import csv
 import json
 import os
 import logging
 from enum import Enum
+
+from File_Management import RemotablePath
 
 from collections.abc import Iterable, Generator, Iterator
 from typing import Any, Optional, TypeVar
@@ -90,6 +93,7 @@ class EnvironmentLogData:
 
 class _HistFileManager:
     "A collection of functions to help manage writing the Environment History CSV file."
+
     @staticmethod
     def write_headers(writer:CSV_Writer):
         "Fill out the headers for"
@@ -136,6 +140,22 @@ class _HistFileManager:
                     overflowing         = bool(row[5]),
                     empty               = bool(row[6])
                 )
+    
+    @staticmethod
+    def read_as_dataframe(history_file:RemotablePath)->pd.DataFrame:
+        "Reads as dataframe with appropriate converters."
+        def to_bool(x): x.lower() in ('true', '1', 'yes')
+        converters = {
+            'Time': lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'),
+            'level': float,
+            'is_pump_on': to_bool,
+            'is_upper_sensor_active': to_bool,
+            'is_lower_sensor_active':to_bool,
+            'is_overflowing':to_bool,
+            'is_empty':to_bool
+        }
+        with RemotablePath.as_local_file(history_file) as local_history_file:
+            return pd.read_csv(local_history_file, converters=converters)
 
 class _EnvironmentStateHistoryLogger:
     "This is the object held by the program provided by a context manager [update_state_history_file()]. This edits the file line by line so it can be viewed live."
@@ -301,6 +321,22 @@ class _CtrlFileManager:
                     targets             = CtrlLogTarget.string_to_set(row[4]),
                     message             = str(row[5])
                 )
+    
+    @staticmethod
+    def read_as_dataframe(history_file:RemotablePath)->pd.DataFrame:
+        "Reads as dataframe with appropriate converters."
+        
+        def to_bool(x): x.lower() in ('true', '1', 'yes')
+        converters = {
+            'Time': lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'),
+            'is_action': to_bool,
+            'is_modbus_error': to_bool,
+            'is_state_refresh': to_bool,
+            'targets': CtrlLogTarget.string_to_set,
+            'message': str
+        }
+        with RemotablePath.as_local_file(history_file) as local_history_file:
+            return pd.read_csv(local_history_file, converters=converters)
 
 class _ControllerHistoryLogger:
     "This is the object held by the program provided by a context manager [update_control_history_file()]. This edits the file line by line so it can be viewed live."

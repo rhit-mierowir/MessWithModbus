@@ -13,6 +13,18 @@ class RemotablePath(Protocol):
     def _close_local_file(self) -> None:
         "This is called after you finish reading a file."
         ...
+    
+    @staticmethod
+    @contextmanager
+    def as_local_file(file_source:'RemotablePath') -> Iterator[Path]:
+        "This returns a local file that can temporarily be used as needed."
+        file:Path = file_source._get_local_file()
+        try:
+            yield file
+        except Exception as e:
+            raise e
+        finally:
+            file_source._close_local_file()
 
 @dataclass
 class LocalPath:
@@ -150,7 +162,6 @@ def parse_remotable_path(location: str, temporary_local_file:Path|None=None, wri
     return LocalPath(location)
 
 
-
 @contextmanager
 def remotable_open(file_source:RemotablePath,*args,**kargs) -> Iterator[Union[TextIO, BinaryIO]]:
     """
@@ -160,12 +171,11 @@ def remotable_open(file_source:RemotablePath,*args,**kargs) -> Iterator[Union[Te
         TextIO for text mode ('r', 'w', 'a', etc.)
         BinaryIO for binary mode ('rb', 'wb', 'ab', etc.)
     """
-    file:Path = file_source._get_local_file()
+    with RemotablePath.as_local_file(file_source) as local_file:
+        try:
+            with open(local_file,*args,**kargs) as f:
+                yield f
+        except Exception as e:
+            raise e
     
-    try:
-        with open(file,*args,**kargs) as f:
-            yield f
-    except Exception as e:
-        raise e
-    finally:
-        file_source._close_local_file()
+

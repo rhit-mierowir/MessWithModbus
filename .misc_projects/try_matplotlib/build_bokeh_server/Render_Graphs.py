@@ -2,8 +2,9 @@ from pathlib import Path
 from dataclasses import dataclass, field
 import logging
 from datetime import datetime
+import pandas as pd
 
-from Save_Results import EnvironmentDirectories
+from Save_Results import EnvironmentDirectories, _CtrlFileManager, _HistFileManager, CtrlLogTarget
 from File_Management import RemotablePath, RemotablePath, SCPAddress, LocalPath, remotable_open, parse_remotable_path
 
 from bokeh.server.server import Server
@@ -64,8 +65,25 @@ def make_document(doc:Document, parameters:render_graph_parameters):
         styles={'padding': '5px', 'background': "#d0fdff", 'text-align': 'left'}
     )
 
-    envt_source = ColumnDataSource(data=dict(x=[], y=[]))
-    ctrl_source = ColumnDataSource(data=dict(x=[], y=[]))
+    envt_source = ColumnDataSource(data=dict(
+        time                = [],
+        level               = [],
+        is_pump_on          = [],
+        is_lower_sensor_on  = [],
+        is_upper_sensor_on  = [],
+        is_overflowing      = [],
+        is_empty            = []
+    ))
+    ctrl_source = ColumnDataSource(data=dict(
+        time                = [],
+        is_action           = [],
+        is_modbus_error     = [],
+        is_state_refresh    = [],
+        target_pump         = [],
+        target_ULS          = [],
+        target_LLS          = [],
+        message             = []
+    ))
 
     files_included = []
     if parameters.history_file is not None: files_included.append("Environment")
@@ -87,11 +105,12 @@ def make_document(doc:Document, parameters:render_graph_parameters):
         y_range=(container.min_level,container.max_level)
     )
     
-    level_plot.line('x', 'y', source=envt_source, line_width=2, color='blue')
-    level_plot.scatter('x', 'y', source=envt_source, line_width=2, marker='square', color='blue')
+    level_plot.line('time', 'level', source=envt_source, line_width=2, color='blue')
+    level_plot.scatter('time', 'level', source=envt_source, line_width=2, marker='square', color='blue')
 
     timestamp_format = CustomJSTickFormatter(code="""
-        var totalSeconds = Math.floor(tick);
+        // Convert from microseconds to seconds
+        var totalSeconds = Math.floor(tick);  // tick is already in seconds
         var hours = Math.floor(totalSeconds / 3600);
         var minutes = Math.floor((totalSeconds % 3600) / 60);
         var seconds = totalSeconds % 60;
@@ -120,29 +139,49 @@ def make_document(doc:Document, parameters:render_graph_parameters):
         level_plot.add_layout(box)
 
 
-    
-    
-    def update():
-        x_data = []
-        y_data = []
+    def update(print_results=False):
+
         try:
-            first_time:datetime|None = None
-            with remotable_open(parameters.history_file, 'r') as file:
-                reader = csv.reader(file)
-                next(reader)
-                for row in reader:
-                    x_time = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
-                    if first_time is None:
-                        first_time = x_time
-                    elapsed_seconds = (x_time-first_time).total_seconds()
-                    x_data.append(elapsed_seconds)
-                    y_data.append(float(row[1]))
-            
-            envt_source.data = dict(x=x_data, y=y_data)
+            envt_data:pd.DataFrame|None = _HistFileManager.read_as_dataframe(parameters.history_file) if parameters.history_file is not None else None
+            ctrl_data:pd.DataFrame|None = _CtrlFileManager.read_as_dataframe(parameters.controller_history_file) if parameters.controller_history_file is not None else None
+
+            if envt_data is None or ctrl_data is None:
+                raise NotImplementedError("I have not yet implemented the ability to graph data when both files are not provided.")
+
+            first_time = min(envt_data['Time'].min(),ctrl_data['Time'].min())
+            envt_data['rel_time'] = (envt_data['Time'] - first_time).dt.total_seconds()
+            ctrl_data['rel_time'] = (ctrl_data['Time'] - first_time).dt.total_seconds()
+
+            envt_source.data = dict(
+                time                = envt_data['rel_time'],
+                level               = envt_data['level'],
+                is_pump_on          = envt_data['is_pump_on'],
+                is_upper_sensor_on  = envt_data['is_upper_sensor_active'],
+                is_lower_sensor_on  = envt_data['is_lower_sensor_active'],
+                is_overflowing      = envt_data['is_overflowing'],
+                is_empty            = envt_data['is_empty']
+                )
+            ctrl_source.data = dict(
+                time                = ctrl_data['rel_time'],
+                is_action           = ctrl_data['is_action'],
+                is_modbus_error     = ctrl_data['is_modbus_error'],
+                is_state_refresh    = ctrl_data['is_state_refresh'],
+                target_pump         = [CtrlLogTarget.pump in x for x in ctrl_data['targets']],
+                target_ULS          = [CtrlLogTarget.ULS in x for x in ctrl_data['targets']],
+                target_LLS          = [CtrlLogTarget.LLS in x for x in ctrl_data['targets']],
+                message             = ctrl_data['message']
+            )
         except Exception as e:
-            print(f"Error: {e}")
+            log.exception(f"Error: {e}")
+        
+        if print_results:
+            print(envt_source.data)
+            print("="*50)
+            print(ctrl_source.data)
+
+
     
-    update()
+    update(print_results=False)
 
     layout = column(display_parameters, level_plot, sizing_mode='stretch_both')
     
