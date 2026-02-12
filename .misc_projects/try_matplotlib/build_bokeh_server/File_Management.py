@@ -71,7 +71,7 @@ class SCPAddress:
             self.user           = None
         self.path               = path
         self.local_save_path    = local_path if local_path is not None else (Path(".") / Path(self.path).name).resolve()
-        self.ssh_key_path       = Path(ssh_key_path).expanduser().resolve()
+        self.ssh_key_path       = Path(ssh_key_path).expanduser().resolve() if ssh_key_path is not None else None
         self.write_file_back    = write_file_back
     
     def __str__(self) -> str:
@@ -139,7 +139,9 @@ def parse_remotable_path(location: str, temporary_local_file:Path|None=None, wri
         LocalPath if:
             location could not be parsed into another path. Uses arguments [].
     """
-    if ':' in location and ('@' in location or not location.startswith('/')):
+    if ':' in location \
+        and not (location[1]==':' and location[0].isupper())\
+        and ('@' in location or not location.startswith('/')):
         return SCPAddress(location, 
                           local_path=       temporary_local_file, 
                           write_file_back=  write_back,
