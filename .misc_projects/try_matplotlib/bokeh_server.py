@@ -213,4 +213,5 @@ curdoc().title = "Linked Plots"
 
 """
 poetry run bokeh serve --show bokeh_app.py
+poetry run bokeh serve --show --port 8000 --address 0.0.0.0 --allow-websocket-origin=127.0.0.1:8000 bokeh_server.py
 """

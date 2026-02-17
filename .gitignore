@@ -2,6 +2,9 @@
 *.png
 *.html
 
+!.misc_projects/try_matplotlib/build_bokeh_server/*.csv
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
