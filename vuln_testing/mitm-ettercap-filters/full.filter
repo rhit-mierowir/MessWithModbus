@@ -1,4 +1,5 @@
-if (ip.proto == TCP && tcp.src == 5020 && ip.src == '172.16.141.129') {
-    DATA.data + 73 = 0x0201;
-    DATA.data + 75 = 0x01;
+if (ip.proto == TCP && tcp.src == 5020) {
+	if (DATA.data + 7 == "\x02") {
+		DATA.data + 9 = "\x01";
+	}
 }
