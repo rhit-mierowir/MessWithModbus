@@ -14,17 +14,16 @@ class RemotablePath(Protocol):
         "This is called after you finish reading a file."
         ...
     
-    @staticmethod
-    @contextmanager
-    def as_local_file(file_source:'RemotablePath') -> Iterator[Path]:
-        "This returns a local file that can temporarily be used as needed."
-        file:Path = file_source._get_local_file()
-        try:
-            yield file
-        except Exception as e:
-            raise e
-        finally:
-            file_source._close_local_file()
+@contextmanager
+def remotable_as_local_file(file_source:RemotablePath) -> Iterator[Path]:
+    "This returns a local file that can temporarily be used as needed."
+    file:Path = file_source._get_local_file()
+    try:
+        yield file
+    except Exception as e:
+        raise e
+    finally:
+        file_source._close_local_file()
 
 @dataclass
 class LocalPath:
@@ -45,7 +44,7 @@ class LocalPath:
 
 @dataclass
 class SCPAddress:
-    user: str
+    user: str | None
     host: str
     path: str
     local_save_path: Path
@@ -99,7 +98,10 @@ class SCPAddress:
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(self.host, username=self.user, key_filename=str(self.ssh_key_path) if self.ssh_key_path else None, look_for_keys=True)
             
-            with SCPClient(ssh.get_transport()) as scp:
+            transport = ssh.get_transport()
+            if transport is None: raise ValueError("Failed To Cate a transport object for ssh in _get_local_file.")
+
+            with SCPClient(transport) as scp:
                 scp.get(self.path, str(self.local_save_path))
                 self.local_file_exists = True
         finally:
@@ -119,7 +121,10 @@ class SCPAddress:
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(self.host, username=self.user, key_filename=str(self.ssh_key_path) if self.ssh_key_path else None, look_for_keys=True)
             
-            with SCPClient(ssh.get_transport()) as scp:
+            transport = ssh.get_transport()
+            if transport is None: raise ValueError("_close_local_file was unable to get a ssh transport object.")
+
+            with SCPClient(transport) as scp:
                 scp.put(str(self.local_save_path),self.path)
                 self.local_save_path.unlink() # Delete local file
                 self.local_file_exists = False
@@ -127,7 +132,7 @@ class SCPAddress:
             ssh.close()
         
 # Usage with a factory function
-def parse_remotable_path(location: str, temporary_local_file:Path|None=None, write_back:bool=False,ssh_key_path:Path|None=None) -> Union[LocalPath, SCPAddress]:
+def parse_remotable_path(location: str, temporary_local_file:Path|None=None, write_back:bool=False,ssh_key_path:Path|None=None) -> RemotablePath:
     """
     Turns a remotable string into a remotable object. This includes files ober scp and local files.
 
@@ -171,7 +176,7 @@ def remotable_open(file_source:RemotablePath,*args,**kargs) -> Iterator[Union[Te
         TextIO for text mode ('r', 'w', 'a', etc.)
         BinaryIO for binary mode ('rb', 'wb', 'ab', etc.)
     """
-    with RemotablePath.as_local_file(file_source) as local_file:
+    with remotable_as_local_file(file_source) as local_file:
         try:
             with open(local_file,*args,**kargs) as f:
                 yield f

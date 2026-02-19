@@ -11,7 +11,7 @@ import os
 import logging
 from enum import Enum
 
-from File_Management import RemotablePath
+from File_Management import RemotablePath, remotable_as_local_file
 
 from collections.abc import Iterable, Generator, Iterator
 from typing import Any, Optional, TypeVar
@@ -59,8 +59,8 @@ class EnvironmentDirectories:
     def base_directory(self)->Path:
         "The directory where all files are stored."
         if self.environment_subdirectory_name is not None:
-            return self.out_dir / self.environment_subdirectory_name
-        return self.out_dir
+            return self.out_dir / self.environment_subdirectory_name #type: ignore
+        return self.out_dir #type:ignore
 
     @property
     def history_file_path(self)->Path:
@@ -89,18 +89,18 @@ class EnvironmentLogData:
     pump_active             :bool       = field(default=False)
     upper_sensor_active     :bool       = field(default=False)
     lower_sensor_active     :bool       = field(default=False)
-    timestamp               :datetime   = field(default_factory=datetime.now())
+    timestamp               :datetime   = field(default_factory=datetime.now)
 
 class _HistFileManager:
     "A collection of functions to help manage writing the Environment History CSV file."
 
     @staticmethod
-    def write_headers(writer:CSV_Writer):
+    def write_headers(writer:CSV_Writer): #type:ignore
         "Fill out the headers for"
         writer.writerow(['Time', 'level','is_pump_on','is_upper_sensor_active', 'is_lower_sensor_active', 'is_overflowing','is_empty'])
 
     @staticmethod
-    def _write_data(writer:CSV_Writer,rows:Iterable[list[Any]]):
+    def _write_data(writer:CSV_Writer,rows:Iterable[Iterable[Any]]): #type:ignore
         writer.writerows(rows)
 
     @staticmethod
@@ -117,11 +117,11 @@ class _HistFileManager:
         return row
     
     @staticmethod
-    def write_data(writer:CSV_Writer,data:EnvironmentLogData):
+    def write_data(writer:CSV_Writer,data:EnvironmentLogData): #type:ignore
         _HistFileManager._write_data(writer,[_HistFileManager._data_to_rows(data)])
     
     @staticmethod
-    def write_datas(writer:CSV_Writer,datas:Iterable[EnvironmentLogData]):
+    def write_datas(writer:CSV_Writer,datas:Iterable[EnvironmentLogData]): #type:ignore
         _HistFileManager._write_data(writer,rows=[_HistFileManager._data_to_rows(d) for d in datas])
 
     @staticmethod
@@ -154,7 +154,7 @@ class _HistFileManager:
             'is_overflowing':to_bool,
             'is_empty':to_bool
         }
-        with RemotablePath.as_local_file(history_file) as local_history_file:
+        with remotable_as_local_file(history_file) as local_history_file:
             return pd.read_csv(local_history_file, converters=converters)
 
 class _EnvironmentStateHistoryLogger:
@@ -195,9 +195,9 @@ def read_state_history_file(history_file:Path)->Iterable[EnvironmentLogData]:
 def save_to_context_file(file:Path,context:dict)->None:
     "Saves the dictionary provided to the Environment Context File to establish to the viewer how the Environment was setup prior to run."
 
-    def context_serializer(obj:Any)->str:
+    def context_serializer(obj:Any)->str|dict:
         if is_dataclass(obj):
-            return asdict(obj)
+            return asdict(obj) #type:ignore
 
         if isinstance(obj, Path):
             return str(obj)
@@ -278,12 +278,12 @@ class ControllerLogData:
 class _CtrlFileManager:
     "A collection of functions to help manage writing the Environment History CSV file."
     @staticmethod
-    def write_headers(writer:CSV_Writer):
+    def write_headers(writer:CSV_Writer): #type:ignore
         "Fill out the headers for"
         writer.writerow(['Time', 'is_action','is_modbus_error', 'is_state_refresh','targets','message'])
 
     @staticmethod
-    def _write_data(writer:CSV_Writer,rows:Iterable[list[Any]]):
+    def _write_data(writer:CSV_Writer,rows:Iterable[Iterable[Any]]): #type:ignore
         writer.writerows(rows)
 
     @staticmethod
@@ -299,11 +299,11 @@ class _CtrlFileManager:
         return row
     
     @staticmethod
-    def write_data(writer:CSV_Writer,data:ControllerLogData):
+    def write_data(writer:CSV_Writer,data:ControllerLogData): #type:ignore
         _CtrlFileManager._write_data(writer,[_CtrlFileManager._data_to_rows(data)])
     
     @staticmethod
-    def write_datas(writer:CSV_Writer,datas:Iterable[ControllerLogData]):
+    def write_datas(writer:CSV_Writer,datas:Iterable[ControllerLogData]): #type:ignore
         _CtrlFileManager._write_data(writer,rows=[_CtrlFileManager._data_to_rows(d) for d in datas])
     
     @staticmethod
@@ -335,7 +335,7 @@ class _CtrlFileManager:
             'targets': CtrlLogTarget.string_to_set,
             'message': str
         }
-        with RemotablePath.as_local_file(history_file) as local_history_file:
+        with remotable_as_local_file(history_file) as local_history_file:
             return pd.read_csv(local_history_file, converters=converters)
 
 class _ControllerHistoryLogger:

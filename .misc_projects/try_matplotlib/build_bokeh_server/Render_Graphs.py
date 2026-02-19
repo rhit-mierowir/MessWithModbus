@@ -188,7 +188,7 @@ def make_document(doc:Document, parameters:render_graph_parameters):
                ],
         sizing_mode='stretch_width',
         height=600,
-        y_range=Range1d(start=container.min_level, end=container.max_level,bounds=(container.min_level,container.max_level))
+        y_range=Range1d(start=container.min_level, end=container.max_level,bounds=(container.min_level,container.max_level)) #type: ignore
     )
   
     level_plot.line('time', 'level', source=envt_source, line_width=2, color='blue')
@@ -213,7 +213,7 @@ def make_document(doc:Document, parameters:render_graph_parameters):
                ],
         sizing_mode='stretch_width',
         height=300,
-        y_range=Range1d(start=0, end=5,bounds=(0,5)), #Based on num signals
+        y_range=Range1d(start=0, end=5,bounds=(0,5)), #Based on num signals #type:ignore
         x_range=level_plot.x_range
     )
     environment_signals_plot.xaxis.formatter = timestamp_format
@@ -256,7 +256,7 @@ def make_document(doc:Document, parameters:render_graph_parameters):
                ],
         sizing_mode='stretch_width',
         height=200,
-        y_range=Range1d(start=min(ctrl_y_index)-0.5, end=max(ctrl_y_index)+0.5,bounds=(min(ctrl_y_index)-0.5,max(ctrl_y_index)+0.5)),
+        y_range=Range1d(start=min(ctrl_y_index)-0.5, end=max(ctrl_y_index)+0.5,bounds=(min(ctrl_y_index)-0.5,max(ctrl_y_index)+0.5)), #type:ignore
         x_range=level_plot.x_range
     )
     controller_message_plot.xaxis.formatter = timestamp_format
@@ -391,8 +391,7 @@ def render_graphs(parameters:render_graph_parameters, directories:EnvironmentDir
 
 # Main execution
 if __name__ == '__main__':
-    #raise NotImplementedError("Configure this manually before using this script independantly.")
-
+    
     HIST_FILE: RemotablePath | None = None
     CTRL_FILE: RemotablePath | None = None
     # Comment the following lines out to act like they weren't provided.
