@@ -397,6 +397,8 @@ if __name__ == '__main__':
     # Comment the following lines out to act like they weren't provided.
     HIST_FILE = parse_remotable_path(str(Path(Path(__file__).parent, "EnvironmentHistory.csv")))
     CTRL_FILE = parse_remotable_path(str(Path(Path(__file__).parent, "ControllerHistory.csv")))
+    
+
 
     _run_bokeh_server(render_graph_parameters(
         update_interval=1,

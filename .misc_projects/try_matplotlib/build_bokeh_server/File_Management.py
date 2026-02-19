@@ -72,6 +72,16 @@ class SCPAddress:
         write_file_back : bool, optional
             True if you want the local file to be written to the remote file after editing finishes (like for a write) but this will overwrite any remote changes that have happened since the initial copy. False if you want to maintain remote data and only read it, by default False
         """
+
+        raise NotImplementedError("""
+                                  The SCP Address object seemed to be having SCP Errors that I couldn't quite figure out. 
+                                  It seems that when we have a version of penguin running and we are trying to connect to the remote server, it doesn't work.
+                                  This is weird because it was working previously when we were testing.
+                                  It complains of not being able to connect to the server and timing out, though.
+                                  Investigate it more with the `mess_with_scp.py` script.
+                                  """)
+    
+
         # Parse user@host:/path
         if '@' in address:
             user_host, path         = address.split(':', 1)
