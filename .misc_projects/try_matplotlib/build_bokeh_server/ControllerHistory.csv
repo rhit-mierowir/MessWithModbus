@@ -5,10 +5,10 @@ Time,is_action,is_modbus_error,is_state_refresh,targets,message
 2026-02-11 00:34:19.508847,True,False,False,pump,pump off from ULS
 2026-02-11 00:34:20.871177,False,False,True,pump-ULS-LLS,
 2026-02-11 00:34:28.869230,False,False,True,pump-ULS-LLS,
-2026-02-11 00:34:30.037098,True,False,False,pump,pump on from LLS
+2026-02-11 00:34:30.037098,True,True,False,pump,pump on from LLS
 2026-02-11 00:34:36.832975,False,False,True,pump-ULS-LLS,
 2026-02-11 00:34:40.534045,True,False,False,pump,pump off from ULS
-2026-02-11 00:34:44.603332,False,False,True,pump-ULS-LLS,
+2026-02-11 00:34:44.603332,False,True,True,pump-ULS-LLS,
 2026-02-11 00:34:51.046410,True,False,False,pump,pump on from LLS
 2026-02-11 00:34:52.378765,False,False,True,pump-ULS-LLS,
 2026-02-11 00:35:00.165321,False,False,True,pump-ULS-LLS,

@@ -144,7 +144,7 @@ class _HistFileManager:
     @staticmethod
     def read_as_dataframe(history_file:RemotablePath)->pd.DataFrame:
         "Reads as dataframe with appropriate converters."
-        def to_bool(x): x.lower() in ('true', '1', 'yes')
+        def to_bool(x): return x.lower() in ('true', '1', 'yes')
         converters = {
             'Time': lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'),
             'level': float,
@@ -326,7 +326,7 @@ class _CtrlFileManager:
     def read_as_dataframe(history_file:RemotablePath)->pd.DataFrame:
         "Reads as dataframe with appropriate converters."
         
-        def to_bool(x): x.lower() in ('true', '1', 'yes')
+        def to_bool(x): return x.lower() in ('true', '1', 'yes')
         converters = {
             'Time': lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'),
             'is_action': to_bool,
